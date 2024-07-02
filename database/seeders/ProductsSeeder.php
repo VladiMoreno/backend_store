@@ -14,7 +14,7 @@ class ProductsSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (range(16, 16) as $index) {
+        foreach (range(1, 10) as $index) {
             $product = new Products();
             $product->name = "Producto $index";
             $product->price = rand(10, 100);
