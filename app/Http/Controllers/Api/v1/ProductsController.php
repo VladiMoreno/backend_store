@@ -17,7 +17,7 @@ class ProductsController extends Controller
      */
     public function index()
     {
-        $products = Products::select('name', 'price', 'barcode_image_path')->get();
+        $products = Products::select('id', 'name', 'price', 'barcode_image_path')->orderBy('id', 'desc')->get();
 
         // Transformar la colección para incluir la URL completa de la imagen
         $products->transform(function ($product) {
@@ -25,7 +25,13 @@ class ProductsController extends Controller
             return $product;
         });
 
-        return response()->json($products);
+        $data = [
+            "statusCode" => 200,
+            "message" => "Productos encontrados",
+            "data" => $products,
+        ];
+
+        return response()->json($data, 200);
     }
 
     /**
@@ -45,7 +51,13 @@ class ProductsController extends Controller
 
         if ($validation->fails()) {
             $errors = $validation->errors()->all();
-            return response()->json(['errors' => $errors], 422);
+            $data = [
+                "statusCode" => 422,
+                "message" => "Errores en los parametros",
+                "errors" => $errors
+            ];
+
+            return response()->json($data, 422);
         }
         $barcodeNumber = $this->generateBarcodeNumber();
 
@@ -62,7 +74,13 @@ class ProductsController extends Controller
         $product->barcode_image_path = $barcodePath;
         $product->save();
 
-        return response()->json($product, 201);
+        $data = [
+            "statusCode" => 201,
+            "message" => "Producto agregado exitosamente !",
+            "data" => $product,
+        ];
+
+        return response()->json($data, 201);
     }
 
     private function generateBarcodeNumber()
@@ -78,17 +96,27 @@ class ProductsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show($barcode)
     {
         //
-        $product = Products::find($id);
+        $product = Products::where('barcode', $barcode)->first();
 
         if (!empty($product)) {
-            return response()->json($product, 200);
+            $data = [
+                "statusCode" => 200,
+                "message" => "Producto encontrado",
+                "data" => $product,
+            ];
+
+            return response()->json($data, 200);
         } else {
-            return response()->json([
-                "message" => "El Registro no se encuentra."
-            ], 404);
+            $data = [
+                "statusCode" => 404,
+                "message" => "Ha ocurrido un error",
+                "error" => "El producto no se encuentra.",
+            ];
+
+            return response()->json($data, 404);
         }
     }
 
@@ -104,9 +132,13 @@ class ProductsController extends Controller
             $detailCart = DetailCarts::where('product_id', $id)->exists();
 
             if ($detailCart) {
-                return response()->json([
-                    "message" => "No se puede actualizar el producto porque está presente en detalle de carrito."
-                ], 400);
+                $data = [
+                    "statusCode" => 409,
+                    "message" => "Ha ocurrido un error",
+                    "error" => "No se puede actualizar el producto porque está presente en detalle de carrito."
+                ];
+
+                return response()->json($data, 409);
             }
 
             $validation = Validator::make($request->all(), [
@@ -120,18 +152,34 @@ class ProductsController extends Controller
 
             if ($validation->fails()) {
                 $errors = $validation->errors()->all();
-                return response()->json(['errors' => $errors], 422);
+                $data = [
+                    "statusCode" => 422,
+                    "message" => "Errores en los parametros",
+                    "errors" => $errors
+                ];
+
+                return response()->json($data, 422);
             }
             $product->name = $request->input('name');
             $product->price = $request->input('price');
 
             $product->update();
 
-            return response()->json($product, 200);
+            $data = [
+                "statusCode" => 200,
+                "message" => "Producto actualizado",
+                "data" => $product,
+            ];
+
+            return response()->json($data, 200);
         } else {
-            return response()->json([
-                "message" => "El Registro no se encuentra."
-            ], 404);
+            $data = [
+                "statusCode" => 404,
+                "message" => "Ha ocurrido un error",
+                "error" => "El producto no se encuentra.",
+            ];
+
+            return response()->json($data, 404);
         }
     }
 
@@ -146,18 +194,32 @@ class ProductsController extends Controller
             $detailCart = DetailCarts::where('product_id', $id)->exists();
 
             if ($detailCart) {
-                return response()->json([
-                    "message" => "No se puede actualizar el producto porque está presente en detalle de carrito."
-                ], 400);
+                $data = [
+                    "statusCode" => 409,
+                    "message" => "Ha ocurrido un error",
+                    "error" => "No se puede eliminar el producto porque está presente en detalle de carrito."
+                ];
+
+                return response()->json($data, 409);
             }
 
             $product->delete();
 
-            return response()->json($product, 200);
+            $data = [
+                "statusCode" => 200,
+                "message" => "Producto eliminado",
+                "data" => $product,
+            ];
+
+            return response()->json($data, 200);
         } else {
-            return response()->json([
-                "message" => "El Registro no se encuentra."
-            ], 404);
+            $data = [
+                "statusCode" => 404,
+                "message" => "Ha ocurrido un error",
+                "error" => "El producto no se encuentra.",
+            ];
+
+            return response()->json($data, 404);
         }
     }
 }

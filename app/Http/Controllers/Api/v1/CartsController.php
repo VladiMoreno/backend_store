@@ -30,7 +30,13 @@ class CartsController extends Controller
             ];
         });
 
-        return response()->json($carts, 200);
+        $data = [
+            "statusCode" => 200,
+            "message" => "Compras encontrados",
+            "data" => $carts,
+        ];
+
+        return response()->json($data, 200);
     }
 
     /**
@@ -41,7 +47,7 @@ class CartsController extends Controller
         $validation = Validator::make($request->all(), [
             'id_user' => 'required|integer|exists:users,id',
             'products' => 'required|array|min:1',
-            'products.*.product_id' => 'required|integer|exists:products,id',
+            'products.*.id' => 'required|integer|exists:products,id',
             'products.*.amount' => 'required|integer|min:1',
         ], [
             'id_user.required' => 'El campo id_user es obligatorio.',
@@ -50,24 +56,34 @@ class CartsController extends Controller
             'products.required' => 'El campo products es obligatorio.',
             'products.array' => 'El campo products debe ser un array.',
             'products.min' => 'El campo products debe tener al menos un producto.',
-            'products.*.product_id.required' => 'El campo product_id es obligatorio.',
-            'products.*.product_id.integer' => 'El campo product_id debe ser un número entero.',
-            'products.*.product_id.exists' => 'El campo product_id debe existir en la tabla products.',
+            'products.*.id.required' => 'El campo id es obligatorio.',
+            'products.*.id.integer' => 'El campo id debe ser un número entero.',
+            'products.*.id.exists' => 'El campo id debe existir en la tabla products.',
             'products.*.amount.required' => 'El campo amount es obligatorio.',
             'products.*.amount.integer' => 'El campo amount debe ser un número entero.',
             'products.*.amount.min' => 'El campo amount debe ser al menos 1.',
         ]);
 
         if ($validation->fails()) {
-            return response()->json(['errors' => $validation->errors()->all()], 422);
+            $data = [
+                "statusCode" => 422,
+                "message" => "Errores en los parametros",
+                "errors" => $validation->errors()->all()
+            ];
+
+            return response()->json($data, 422);
         }
 
         $user = User::find($request->input('id_user'));
 
         if (empty($user)) {
-            return response()->json([
-                "error" => "Usuario inexistente"
-            ], 404);
+            $data = [
+                "statusCode" => 404,
+                "message" => "Ha ocurrido un error",
+                "error" => "El usuario no se encuentra.",
+            ];
+
+            return response()->json($data, 404);
         }
 
         $cart = new Carts();
@@ -76,21 +92,27 @@ class CartsController extends Controller
         $cart->save();
 
         foreach ($request->input('products') as $product) {
-            $detailProduct = Products::find($product['product_id']);
+            $detailProduct = Products::find($product['id']);
 
             $subtotal = $detailProduct['price'] *  $product['amount'];
 
             $detailCart = new DetailCarts();
 
             $detailCart->cart_id = $cart->id;
-            $detailCart->product_id = $product['product_id'];
+            $detailCart->product_id = $product['id'];
             $detailCart->amount = $product['amount'];
             $detailCart->price = $subtotal;
 
             $detailCart->save();
         }
 
-        return response()->json(['message' => 'Compra realizada.'], 201);
+        $data = [
+            "statusCode" => 201,
+            "message" => "Compra realizada exitosamente !",
+            "data" => [],
+        ];
+
+        return response()->json($data, 201);
     }
 
     /**
