@@ -74,6 +74,8 @@ class ProductsController extends Controller
         $product->barcode_image_path = $barcodePath;
         $product->save();
 
+        $product->barcode_image_path = '/storage/' . $barcodePath;
+
         $data = [
             "statusCode" => 201,
             "message" => "Producto agregado exitosamente !",
