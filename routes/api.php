@@ -16,7 +16,7 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/carts', [CartsController::class, 'index']);
     Route::post('/carts', [CartsController::class, 'store']);
-    Route::get('/carts/{id}', [CartsController::class, 'index']);
+    Route::get('/carts/{id}', [CartsController::class, 'show']);
 
     Route::get('storage/barcodes/{image}', function ($filename) {
         $path = storage_path('app/public/barcodes/' . $filename);

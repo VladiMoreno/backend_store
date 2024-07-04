@@ -118,9 +118,63 @@ class CartsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Carts $carts)
+    public function show($id)
     {
-        //
+        $validator = Validator::make(['id' => $id], [
+            'id' => 'required|numeric|exists:carts,id',
+        ]);
+
+        if ($validator->fails()) {
+            $data = [
+                "statusCode" => 422,
+                "message" => "Errores en los parametros",
+                "errors" => $validator->errors()->all()
+            ];
+
+            return response()->json($data, 422);
+        }
+
+        $cart = Carts::with(['user', 'DetailCart.product'])
+            ->where('id', $id)
+            ->first();
+
+        if (!empty($cart)) {
+
+            $total = $cart->DetailCart->sum(function ($detail) {
+                return $detail->amount * $detail->price;
+            });
+
+            $detail = $cart->DetailCart->map(function ($detail) {
+                return [
+                    'producto' => $detail->product->name,
+                    'amount' => $detail->amount,
+                    'price' => $detail->price,
+                ];
+            });
+
+            $info = [
+                'user' => $cart->user->name,
+                'fecha' => $cart->created_at->format('d-m-Y'),
+                'total' => $total,
+                'detalle' => $detail,
+            ];
+
+            $data = [
+                "statusCode" => 200,
+                "message" => "Detalle de la compra",
+                "data" => $info,
+            ];
+
+            return response()->json($data, 200);
+        } else {
+            $data = [
+                "statusCode" => 404,
+                "message" => "Ha ocurrido un error",
+                "error" => "La compra no se encuentra.",
+            ];
+
+            return response()->json($data, 404);
+        }
     }
 
     /**
